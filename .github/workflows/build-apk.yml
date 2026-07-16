@@ -1,0 +1,63 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Create base Flutter project
+        run: |
+          flutter create \
+            --org com.example \
+            --project-name duplicate_cleaner \
+            --platforms android \
+            /tmp/flutter_app
+
+      - name: Copy Dart source files
+        run: |
+          cp -r flutter-app/lib /tmp/flutter_app/
+          cp flutter-app/pubspec.yaml /tmp/flutter_app/pubspec.yaml
+
+      - name: Copy Android manifest & file_paths
+        run: |
+          mkdir -p /tmp/flutter_app/android/app/src/main/res/xml
+          cp flutter-app/android/AndroidManifest.xml \
+             /tmp/flutter_app/android/app/src/main/AndroidManifest.xml
+          cp flutter-app/android/file_paths.xml \
+             /tmp/flutter_app/android/app/src/main/res/xml/file_paths.xml
+
+      - name: flutter pub get
+        working-directory: /tmp/flutter_app
+        run: flutter pub get
+
+      - name: Build debug APK
+        working-directory: /tmp/flutter_app
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: duplicate-cleaner-debug-apk
+          path: /tmp/flutter_app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
