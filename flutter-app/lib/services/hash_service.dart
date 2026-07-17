@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -6,6 +5,15 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 const int _chunkSize = 1 * 1024 * 1024; // 1 MB chunks
+
+// Simple Sink<Digest> implementation — avoids dart:convert compatibility issues
+class _DigestSink implements Sink<Digest> {
+  Digest? value;
+  @override
+  void add(Digest data) => value = data;
+  @override
+  void close() {}
+}
 
 // Top-level — required by compute()
 Future<String?> _computeMd5(String filePath) async {
@@ -16,10 +24,8 @@ Future<String?> _computeMd5(String filePath) async {
     final stat = file.statSync();
     if (stat.size == 0) return null;
 
-    Digest? result;
-    final input = md5.startChunkedConversion(
-      ByteConversionSink.withCallback((digest) => result = Digest(digest)),
-    );
+    final sink  = _DigestSink();
+    final input = md5.startChunkedConversion(sink);
 
     final raf = file.openSync(mode: FileMode.read);
     try {
@@ -37,7 +43,7 @@ Future<String?> _computeMd5(String filePath) async {
       raf.closeSync();
     }
 
-    return result?.toString();
+    return sink.value?.toString();
   } on FileSystemException catch (e) {
     debugPrint('[HashService] FileSystemException: $e');
     return null;
