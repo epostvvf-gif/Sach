@@ -34,6 +34,15 @@ jobs:
             --platforms android \
             /tmp/flutter_app
 
+      - name: Update Kotlin version to 1.9.24
+        run: |
+          # settings.gradle style (Flutter 3.19+)
+          sed -i 's/id "org.jetbrains.kotlin.android" version "[^"]*"/id "org.jetbrains.kotlin.android" version "1.9.24"/' \
+            /tmp/flutter_app/android/settings.gradle || true
+          # build.gradle style (older projects)
+          sed -i 's/ext.kotlin_version = "[^"]*"/ext.kotlin_version = "1.9.24"/' \
+            /tmp/flutter_app/android/build.gradle || true
+
       - name: Copy Dart source files
         run: |
           cp -r flutter-app/lib /tmp/flutter_app/
