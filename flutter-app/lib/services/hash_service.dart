@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -16,8 +15,10 @@ Future<String?> _computeMd5(String filePath) async {
     final stat = file.statSync();
     if (stat.size == 0) return null;
 
-    final output = AccumulatorSink<Digest>();
-    final input  = md5.startChunkedConversion(output);
+    Digest? result;
+    final input = md5.startChunkedConversion(
+      ByteConversionSink.withCallback((digest) => result = Digest(digest)),
+    );
 
     final raf = file.openSync(mode: FileMode.read);
     try {
@@ -35,7 +36,7 @@ Future<String?> _computeMd5(String filePath) async {
       raf.closeSync();
     }
 
-    return output.events.single.toString();
+    return result?.toString();
   } on FileSystemException catch (e) {
     debugPrint('[HashService] FileSystemException: $e');
     return null;

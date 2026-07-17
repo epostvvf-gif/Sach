@@ -87,7 +87,7 @@ class CleanerService {
 
       for (final file in group.duplicates) {
         final record = await _moveOne(
-            source: file, destDir: destDir, dryRun: dryRun);
+            file: file, destDir: destDir, dryRun: dryRun);
         records.add(record);
         onProgress?.call(record);
       }
@@ -115,7 +115,7 @@ class CleanerService {
     final destDir = Directory(p.join(root, folderName));
     if (!dryRun) await _ensureDir(destDir);
 
-    final record = await _moveOne(source: file, destDir: destDir, dryRun: dryRun);
+    final record = await _moveOne(file: file, destDir: destDir, dryRun: dryRun);
     return CleanSummary(
       wasDryRun:   dryRun,
       records:     [record],
